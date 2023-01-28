@@ -1,157 +1,140 @@
+/**
+ * @file
+ *   GCC linker script for nRF52840.
+ */
+
 SEARCH_DIR(.)
 GROUP(-lgcc -lc -lnosys)
 
 MEMORY
 {
   FLASH (rx) : ORIGIN = 0x10000, LENGTH = 0xf0000
-  RAM_NVIC (rwx) : ORIGIN = 0x20000000, LENGTH = 0x100
-  RAM_CRASH_DATA (rwx) : ORIGIN = (0x20000000 + 0x100), LENGTH = 0x100
-  RAM (rwx) : ORIGIN = ((0x20000000 + 0x100) + 0x100), LENGTH = (0x40000 - (0x100 + 0x100))
+  RAM (rwx) :  ORIGIN = 0x20000000, LENGTH = 0x40000
 }
+
 OUTPUT_FORMAT ("elf32-littlearm", "elf32-bigarm", "elf32-littlearm")
+
 ENTRY(Reset_Handler)
+
+FLASH_PAGE_SIZE       = 4096;
+FLASH_DATA_PAGES_USED = 4;
+
 SECTIONS
 {
     .text :
     {
-        KEEP(*(.Vectors))
+        KEEP(*(.isr_vector))
         *(.text*)
+
         KEEP(*(.init))
         KEEP(*(.fini))
+
+        /* .ctors */
         *crtbegin.o(.ctors)
         *crtbegin?.o(.ctors)
         *(EXCLUDE_FILE(*crtend?.o *crtend.o) .ctors)
         *(SORT(.ctors.*))
         *(.ctors)
+
+        /* .dtors */
         *crtbegin.o(.dtors)
         *crtbegin?.o(.dtors)
         *(EXCLUDE_FILE(*crtend?.o *crtend.o) .dtors)
         *(SORT(.dtors.*))
         *(.dtors)
+
         *(.rodata*)
+
         KEEP(*(.eh_frame*))
     } > FLASH
-    .sdh_soc_observers :
-    {
-        PROVIDE(__start_sdh_soc_observers = .);
-        KEEP(*(SORT(.sdh_soc_observers*)))
-        PROVIDE(__stop_sdh_soc_observers = .);
-    } > FLASH
-    .sdh_stack_observers :
-    {
-        PROVIDE(__start_sdh_stack_observers = .);
-        KEEP(*(SORT(.sdh_stack_observers*)))
-        PROVIDE(__stop_sdh_stack_observers = .);
-    } > FLASH
-    .sdh_req_observers :
-    {
-        PROVIDE(__start_sdh_req_observers = .);
-        KEEP(*(SORT(.sdh_req_observers*)))
-        PROVIDE(__stop_sdh_req_observers = .);
-    } > FLASH
-    .sdh_state_observers :
-    {
-        PROVIDE(__start_sdh_state_observers = .);
-        KEEP(*(SORT(.sdh_state_observers*)))
-        PROVIDE(__stop_sdh_state_observers = .);
-    } > FLASH
-    .sdh_ble_observers :
-    {
-        PROVIDE(__start_sdh_ble_observers = .);
-        KEEP(*(SORT(.sdh_ble_observers*)))
-        PROVIDE(__stop_sdh_ble_observers = .);
-    } > FLASH
+
     .ARM.extab :
     {
         *(.ARM.extab* .gnu.linkonce.armextab.*)
     } > FLASH
+
     __exidx_start = .;
     .ARM.exidx :
     {
         *(.ARM.exidx* .gnu.linkonce.armexidx.*)
     } > FLASH
     __exidx_end = .;
+
     __etext = .;
+
     .data : AT (__etext)
     {
         __data_start__ = .;
         *(vtable)
         *(.data*)
-        . = ALIGN(8);
+
+        . = ALIGN(4);
+        /* preinit data */
         PROVIDE_HIDDEN (__preinit_array_start = .);
         KEEP(*(.preinit_array))
         PROVIDE_HIDDEN (__preinit_array_end = .);
-        . = ALIGN(8);
+
+        . = ALIGN(4);
+        /* init data */
         PROVIDE_HIDDEN (__init_array_start = .);
         KEEP(*(SORT(.init_array.*)))
         KEEP(*(.init_array))
         PROVIDE_HIDDEN (__init_array_end = .);
-        . = ALIGN(8);
+
+
+        . = ALIGN(4);
+        /* finit data */
         PROVIDE_HIDDEN (__fini_array_start = .);
         KEEP(*(SORT(.fini_array.*)))
         KEEP(*(.fini_array))
         PROVIDE_HIDDEN (__fini_array_end = .);
-        . = ALIGN(8);
-        PROVIDE(__start_fs_data = .);
-        KEEP(*(.fs_data))
-        PROVIDE(__stop_fs_data = .);
-        *(.jcr)
-        . = ALIGN(8);
+
+        KEEP(*(.jcr*))
+        . = ALIGN(4);
+        /* All data end */
         __data_end__ = .;
+
     } > RAM
-    __edata = .;
-    .nvictable (NOLOAD) :
-    {
-      PROVIDE(__start_nvictable = .);
-      KEEP(*(.nvictable))
-      PROVIDE(__stop_nvictable = .);
-    } > RAM_NVIC
-    .crash_data_ram :
-    {
-      . = ALIGN(8);
-      __CRASH_DATA_RAM__ = .;
-      __CRASH_DATA_RAM_START__ = .;
-      KEEP(*(.keep.crash_data_ram))
-      *(.m_crash_data_ram)
-      . += 0x100;
-      . = ALIGN(8);
-      __CRASH_DATA_RAM_END__ = .;
-    } > RAM_CRASH_DATA
-    .noinit (NOLOAD) :
-    {
-      PROVIDE(__start_noinit = .);
-      KEEP(*(.noinit))
-      PROVIDE(__stop_noinit = .);
-    } > RAM
+
     .bss :
     {
-        . = ALIGN(8);
+        . = ALIGN(4);
         __bss_start__ = .;
         *(.bss*)
         *(COMMON)
-        . = ALIGN(8);
+        . = ALIGN(4);
         __bss_end__ = .;
     } > RAM
-    .heap (NOLOAD):
+
+    .heap (COPY):
     {
+        __HeapBase = .;
         __end__ = .;
-        end = __end__;
-        *(.heap*);
-        ASSERT(. <= (ORIGIN(RAM) + LENGTH(RAM) - 0x400), "heap region overflowed into stack");
-        . = ORIGIN(RAM) + LENGTH(RAM) - 0x400;
+        PROVIDE(end = .);
+        KEEP(*(.heap*))
         __HeapLimit = .;
     } > RAM
-    PROVIDE(__heap_start = ADDR(.heap));
-    PROVIDE(__heap_size = SIZEOF(.heap));
-    PROVIDE(__mbed_sbrk_start = ADDR(.heap));
-    PROVIDE(__mbed_krbs_start = ADDR(.heap) + SIZEOF(.heap));
-    .stack (NOLOAD):
+
+    /* .stack_dummy section doesn't contains any symbols. It is only
+     * used for linker to calculate size of stack sections, and assign
+     * values to stack symbols later */
+    .stack_dummy (COPY):
     {
-        __StackLimit = .;
-        *(.stack*)
-        . = ORIGIN(RAM) + LENGTH(RAM);
+        KEEP(*(.stack*))
     } > RAM
+
+    __stop_ot_flash_data = (ORIGIN(FLASH) + LENGTH(FLASH));
+    __start_ot_flash_data = (__stop_ot_flash_data - (FLASH_PAGE_SIZE * FLASH_DATA_PAGES_USED));
+
+    /* Assure that code does not overlap flash data area.*/
+    ASSERT((__start_ot_flash_data >= __etext + SIZEOF(.data)), "Error: Code overlaps flash data area.")
+
+    /* Set stack top to end of RAM, and stack limit move down by
+     * size of stack_dummy section */
     __StackTop = ORIGIN(RAM) + LENGTH(RAM);
-    __StackLimit = __StackTop - 0x400;
+    __StackLimit = __StackTop - SIZEOF(.stack_dummy);
     PROVIDE(__stack = __StackTop);
+
+    /* Check if data + heap + stack exceeds RAM limit */
+    ASSERT(__StackLimit >= __HeapLimit, "region RAM overflowed with stack")
 }
