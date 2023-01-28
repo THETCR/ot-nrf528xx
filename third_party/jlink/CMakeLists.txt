@@ -50,7 +50,7 @@ target_compile_options(jlinkrtt PRIVATE
     -DUSE_APP_CONFIG=1
 )
 
-if(OT_PLATFORM STREQUAL "arduino")
+if(NRF_PLATFORM STREQUAL "arduino")
     target_include_directories(jlinkrtt PRIVATE
             ${PROJECT_SOURCE_DIR}/include
             ${PROJECT_SOURCE_DIR}/third_party/NordicSemiconductor/cmsis
