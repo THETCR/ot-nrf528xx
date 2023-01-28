@@ -50,12 +50,24 @@ target_compile_options(jlinkrtt PRIVATE
     -DUSE_APP_CONFIG=1
 )
 
-target_include_directories(jlinkrtt PRIVATE
-    ${PROJECT_SOURCE_DIR}/include
-    ${PROJECT_SOURCE_DIR}/third_party/NordicSemiconductor/cmsis
-    ${PROJECT_SOURCE_DIR}/third_party/NordicSemiconductor/config
-    ${PROJECT_SOURCE_DIR}/third_party/NordicSemiconductor/config/${NRF_PLATFORM}/config
-    ${PROJECT_SOURCE_DIR}/third_party/NordicSemiconductor/dependencies
-    ${PROJECT_SOURCE_DIR}/third_party/NordicSemiconductor/libraries/app_error
-    ${PROJECT_SOURCE_DIR}/third_party/NordicSemiconductor/nrfx/mdk
-)
+if(OT_PLATFORM STREQUAL "arduino")
+    target_include_directories(jlinkrtt PRIVATE
+            ${PROJECT_SOURCE_DIR}/include
+            ${PROJECT_SOURCE_DIR}/third_party/NordicSemiconductor/cmsis
+            ${PROJECT_SOURCE_DIR}/third_party/NordicSemiconductor/config
+            ${PROJECT_SOURCE_DIR}/third_party/NordicSemiconductor/config/nrf52840/config
+            ${PROJECT_SOURCE_DIR}/third_party/NordicSemiconductor/dependencies
+            ${PROJECT_SOURCE_DIR}/third_party/NordicSemiconductor/libraries/app_error
+            ${PROJECT_SOURCE_DIR}/third_party/NordicSemiconductor/nrfx/mdk
+            )
+else()
+    target_include_directories(jlinkrtt PRIVATE
+            ${PROJECT_SOURCE_DIR}/include
+            ${PROJECT_SOURCE_DIR}/third_party/NordicSemiconductor/cmsis
+            ${PROJECT_SOURCE_DIR}/third_party/NordicSemiconductor/config
+            ${PROJECT_SOURCE_DIR}/third_party/NordicSemiconductor/config/${NRF_PLATFORM}/config
+            ${PROJECT_SOURCE_DIR}/third_party/NordicSemiconductor/dependencies
+            ${PROJECT_SOURCE_DIR}/third_party/NordicSemiconductor/libraries/app_error
+            ${PROJECT_SOURCE_DIR}/third_party/NordicSemiconductor/nrfx/mdk
+            )
+endif()
