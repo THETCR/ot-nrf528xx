@@ -31,7 +31,7 @@ set -euxo pipefail
 
 OT_CMAKE_NINJA_TARGET=${OT_CMAKE_NINJA_TARGET:-}
 
-NRF_PLATFORMS=(nrf52811 nrf52833 nrf52840)
+NRF_PLATFORMS=(nrf52811 nrf52833 nrf52840 arduino)
 readonly NRF_PLATFORMS
 
 NRF_BUILD_TYPES=(UART_trans USB_trans SPI_trans_NCP soft_crypto soft_crypto_threading)
@@ -142,6 +142,17 @@ main()
                     ;;
                 soft_crypto_threading)
                     options+=("${local_options[@]}" "-DOT_MBEDTLS_THREADING=ON")
+                    ;;
+            esac
+            ;;
+        arduino)
+            local_options+=("-DCMAKE_TOOLCHAIN_FILE=src/${platform}/arm-none-eabi.cmake")
+            case "${nrf_build_type}" in
+                UART_trans)
+                    options+=("${local_options[@]}" "-DOT_EXTERNAL_MBEDTLS=nordicsemi-mbedtls")
+                    ;;
+                USB_trans)
+                    options+=("${local_options[@]}" "-DOT_USB=ON" "-DOT_EXTERNAL_MBEDTLS=nordicsemi-mbedtls")
                     ;;
             esac
             ;;

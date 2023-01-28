@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2020, The OpenThread Authors.
+#  Copyright (c) 2021, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,37 +26,31 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-cmake_minimum_required(VERSION 3.10.2)
-project(ot-nrf528xx VERSION 0.2.0)
+set(CMAKE_SYSTEM_NAME              Generic)
+set(CMAKE_SYSTEM_PROCESSOR         ARM)
 
-set(NRF_PLATFORM_VALUES
-    "nrf52811"
-    "nrf52833"
-    "nrf52840"
-    "arduino"
-)
-set_property(CACHE NRF_PLATFORM PROPERTY STRINGS ${NRF_PLATFORM_VALUES})
-if(NOT NRF_PLATFORM IN_LIST NRF_PLATFORM_VALUES)
-    message(FATAL_ERROR "Please select a supported platform: ${NRF_PLATFORM_VALUES}")
+set(CMAKE_C_COMPILER               arm-none-eabi-gcc)
+set(CMAKE_CXX_COMPILER             arm-none-eabi-g++)
+set(CMAKE_ASM_COMPILER             arm-none-eabi-as)
+set(CMAKE_RANLIB                   arm-none-eabi-ranlib)
+
+execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion OUTPUT_VARIABLE COMPILER_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+set(COMMON_C_FLAGS                 "-mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mabi=aapcs -fdata-sections -ffunction-sections")
+
+if(COMPILER_VERSION VERSION_GREATER_EQUAL 7)
+    set(COMMON_C_FLAGS             "${COMMON_C_FLAGS} -Wno-expansion-to-defined")
 endif()
 
-set(OT_PLATFORM_LIB "openthread-${NRF_PLATFORM}" "openthread-${NRF_PLATFORM}-transport")
+set(CMAKE_C_FLAGS_INIT             "${COMMON_C_FLAGS} -std=gnu99")
+set(CMAKE_CXX_FLAGS_INIT           "${COMMON_C_FLAGS} -fno-exceptions -fno-rtti")
+set(CMAKE_ASM_FLAGS_INIT           "${COMMON_C_FLAGS} -x assembler-with-cpp")
+set(CMAKE_EXE_LINKER_FLAGS_INIT    "${COMMON_C_FLAGS} -specs=nano.specs -specs=nosys.specs")
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
+set(CMAKE_C_FLAGS_DEBUG            "-Og -g")
+set(CMAKE_CXX_FLAGS_DEBUG          "-Og -g")
+set(CMAKE_ASM_FLAGS_DEBUG          "-g")
 
-add_subdirectory(openthread)
-
-target_compile_definitions(ot-config INTERFACE
-    OPENTHREAD_CONFIG_FILE="openthread-core-${NRF_PLATFORM}-config.h"
-    OPENTHREAD_PROJECT_CORE_CONFIG_FILE="openthread-core-${NRF_PLATFORM}-config.h"
-    OPENTHREAD_CORE_CONFIG_PLATFORM_CHECK_FILE="openthread-core-${NRF_PLATFORM}-config-check.h"
-)
-
-target_include_directories(ot-config INTERFACE
-    ${PROJECT_SOURCE_DIR}/src/${NRF_PLATFORM}
-)
-
-add_subdirectory(src)
-add_subdirectory(third_party)
+set(CMAKE_C_FLAGS_RELEASE          "-Os")
+set(CMAKE_CXX_FLAGS_RELEASE        "-Os")
+set(CMAKE_ASM_FLAGS_RELEASE        "")

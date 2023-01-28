@@ -100,4 +100,12 @@ elseif(NRF_PLATFORM STREQUAL "nrf52840")
         jlinkrtt
     )
     include(nrf52840/nrf52840.cmake)
+elseif(NRF_PLATFORM STREQUAL "arduino")
+    set(NRF52840_3RD_LIBS
+            nordicsemi-nrf52840-radio-driver
+            nordicsemi-nrf52840-radio-driver-softdevice
+            nordicsemi-nrf52840-sdk
+            jlinkrtt
+            )
+    include(arduino/arduino.cmake)
 endif()
