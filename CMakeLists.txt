@@ -40,7 +40,11 @@ if(NOT NRF_PLATFORM IN_LIST NRF_PLATFORM_VALUES)
     message(FATAL_ERROR "Please select a supported platform: ${NRF_PLATFORM_VALUES}")
 endif()
 
-set(OT_PLATFORM_LIB "openthread-${NRF_PLATFORM}" "openthread-${NRF_PLATFORM}-transport")
+if(NRF_PLATFORM STREQUAL "arduino")
+    set(OT_PLATFORM_LIB "openthread-nrf52840" "openthread-nrf52840-transport")
+else()
+    set(OT_PLATFORM_LIB "openthread-${NRF_PLATFORM}" "openthread-${NRF_PLATFORM}-transport")
+endif()
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
