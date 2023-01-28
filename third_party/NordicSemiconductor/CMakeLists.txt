@@ -359,6 +359,79 @@ elseif(NRF_PLATFORM STREQUAL "nrf52840")
             ${RADIO_DRIVER_SINGLE_PHY_SOURCES}
     )
     target_link_libraries(nordicsemi-nrf52840-radio-driver-softdevice PRIVATE ot-config)
+elseif(NRF_PLATFORM STREQUAL "arduino")
+    add_library(nordicsemi-nrf52840-sdk)
+    target_compile_definitions(nordicsemi-nrf52840-sdk
+            PRIVATE
+            ${COMMON_FLAG}
+            -DNRF52840_XXAA
+            -DNRF_802154_PROJECT_CONFIG=\"platform-config.h\"
+            )
+    target_include_directories(nordicsemi-nrf52840-sdk
+            PUBLIC
+            ${COMMON_INCLUDES}
+            ${EXAMPLE_INCLUDES}
+            ${PROJECT_SOURCE_DIR}/src/arduino/
+            ${PROJECT_SOURCE_DIR}/third_party/NordicSemiconductor/config/nrf52840/config
+            )
+    set_property(SOURCE nrfx/mdk/gcc_startup_nrf52840.S PROPERTY LANGUAGE C)
+    target_sources(nordicsemi-nrf52840-sdk
+            PRIVATE
+            ${COMMON_SOURCES}
+            ${USB_SOURCES}
+            nrfx/mdk/gcc_startup_nrf52840.S
+            nrfx/mdk/system_nrf52840.c
+            )
+    target_link_libraries(nordicsemi-nrf52840-sdk PRIVATE ot-config)
+
+    add_library(nordicsemi-nrf52840-radio-driver)
+    target_compile_definitions(nordicsemi-nrf52840-radio-driver
+            PRIVATE
+            ${COMMON_FLAG}
+            -DNRF52840_XXAA
+            -DNRF_802154_PROJECT_CONFIG=\"platform-config.h\"
+            -DRAAL_SINGLE_PHY=1
+            )
+    target_include_directories(nordicsemi-nrf52840-radio-driver
+            PUBLIC
+            ${COMMON_INCLUDES}
+            ${EXAMPLE_INCLUDES}
+            ${OT_PUBLIC_INCLUDES}
+            ${PROJECT_SOURCE_DIR}/src/arduino/
+            ${PROJECT_SOURCE_DIR}/third_party/NordicSemiconductor/config/nrf52840/config
+            )
+    target_sources(nordicsemi-nrf52840-radio-driver
+            PRIVATE
+            ${RADIO_DRIVER_SOURCES}
+            ${RADIO_DRIVER_SINGLE_PHY_SOURCES}
+            )
+    target_link_libraries(nordicsemi-nrf52840-radio-driver PRIVATE ot-config)
+
+    add_library(nordicsemi-nrf52840-radio-driver-softdevice)
+    target_compile_definitions(nordicsemi-nrf52840-radio-driver-softdevice
+            PRIVATE
+            ${COMMON_FLAG}
+            -DNRF52840_XXAA
+            -DNRF_802154_PROJECT_CONFIG=\"platform-config.h\"
+            -DRAAL_SINGLE_PHY=1
+            -DSOFTDEVICE_PRESENT
+            -DS140
+            -DRAAL_SOFTDEVICE=1
+            )
+    target_include_directories(nordicsemi-nrf52840-radio-driver-softdevice
+            PUBLIC
+            ${COMMON_INCLUDES}
+            ${EXAMPLE_INCLUDES}
+            ${OT_PUBLIC_INCLUDES}
+            ${PROJECT_SOURCE_DIR}/src/arduino/
+            ${PROJECT_SOURCE_DIR}/third_party/NordicSemiconductor/config/nrf52840/config
+            )
+    target_sources(nordicsemi-nrf52840-radio-driver-softdevice
+            PRIVATE
+            ${RADIO_DRIVER_SOURCES}
+            ${RADIO_DRIVER_SINGLE_PHY_SOURCES}
+            )
+    target_link_libraries(nordicsemi-nrf52840-radio-driver-softdevice PRIVATE ot-config)
 else()
     message(FATAL_ERROR "Platform unknown: ${NRF_PLATFORM}")
 endif()
