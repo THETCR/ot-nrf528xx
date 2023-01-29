@@ -26,7 +26,6 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-option(OT_BOOTLOADER "OT nrf bootloader type")
 set(LD_FILE "${CMAKE_CURRENT_SOURCE_DIR}/arduino/arduino.ld")
 
 list(APPEND OT_PLATFORM_DEFINES
