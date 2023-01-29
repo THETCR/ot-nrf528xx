@@ -273,7 +273,7 @@
  * Use USB CDC driver for serial communication.
  */
 #ifndef USB_CDC_AS_SERIAL_TRANSPORT
-#define USB_CDC_AS_SERIAL_TRANSPORT 0
+#define USB_CDC_AS_SERIAL_TRANSPORT 1
 #endif
 
 /**
@@ -283,7 +283,7 @@
  * limitation. Takes values between 0-255.
  */
 #ifndef USB_CDC_ACM_COMM_INTERFACE
-#define USB_CDC_ACM_COMM_INTERFACE 5
+#define USB_CDC_ACM_COMM_INTERFACE 6
 #endif
 
 /**
