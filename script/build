@@ -44,6 +44,8 @@ OT_OPTIONS=(
     "-DCMAKE_BUILD_TYPE=MinSizeRel"
     "-DOT_PLATFORM=external"
     "-DOT_SLAAC=ON"
+    "-DBOARD=arduino_nano_33_ble_sense"
+    "-DCONF_FILE=prj.conf"
 )
 readonly OT_OPTIONS
 
