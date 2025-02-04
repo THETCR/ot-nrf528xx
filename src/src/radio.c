@@ -557,6 +557,7 @@ otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aFrame)
 
         if (aFrame->mInfo.mTxInfo.mCsmaCaEnabled)
         {
+            nrf_802154_max_num_csma_ca_backoffs_set(aFrame->mInfo.mTxInfo.mMaxCsmaBackoffs);
             nrf_802154_transmit_csma_ca_raw(&aFrame->mPsdu[-1]);
         }
         else
@@ -1037,9 +1038,7 @@ void nrf_802154_received_timestamp_raw(uint8_t *p_data, int8_t power, uint8_t lq
 #if !NRF_802154_TX_STARTED_NOTIFY_ENABLED
 #error "NRF_802154_TX_STARTED_NOTIFY_ENABLED is required!"
 #endif
-    uint32_t offset =
-        (int32_t)otPlatAlarmMicroGetNow() - (int32_t)nrf_802154_first_symbol_timestamp_get(time, p_data[0]);
-    receivedFrame->mInfo.mRxInfo.mTimestamp = nrf5AlarmGetCurrentTime() - offset;
+    receivedFrame->mInfo.mRxInfo.mTimestamp = nrf_802154_timestamp_end_to_phr_convert(time, p_data[0]);
 
     sAckedWithFramePending = false;
 
@@ -1172,10 +1171,7 @@ void nrf_802154_transmitted_timestamp_raw(const uint8_t *aFrame,
     }
     else
     {
-        uint32_t offset =
-            (int32_t)otPlatAlarmMicroGetNow() - (int32_t)nrf_802154_first_symbol_timestamp_get(ack_time, aAckPsdu[0]);
-
-        sAckFrame.mInfo.mRxInfo.mTimestamp = nrf5AlarmGetCurrentTime() - offset;
+        sAckFrame.mInfo.mRxInfo.mTimestamp = nrf_802154_timestamp_end_to_phr_convert(ack_time, aAckPsdu[0]);
         sAckFrame.mPsdu                    = &aAckPsdu[1];
         sAckFrame.mLength                  = aAckPsdu[0];
         sAckFrame.mInfo.mRxInfo.mRssi      = aPower;

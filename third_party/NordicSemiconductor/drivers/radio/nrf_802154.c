@@ -200,6 +200,13 @@ uint32_t nrf_802154_first_symbol_timestamp_get(uint32_t end_timestamp, uint8_t p
     return end_timestamp - (frame_symbols * PHY_US_PER_SYMBOL);
 }
 
+uint64_t nrf_802154_timestamp_end_to_phr_convert(uint64_t end_timestamp, uint8_t psdu_length)
+{
+    uint32_t frame_symbols = (PHR_SIZE + psdu_length) * PHY_SYMBOLS_PER_OCTET;
+
+    return end_timestamp - (frame_symbols * PHY_US_PER_SYMBOL);
+}
+
 void nrf_802154_init(void)
 {
     nrf_802154_ack_data_init();
@@ -661,6 +668,11 @@ void nrf_802154_cca_cfg_get(nrf_802154_cca_cfg_t * p_cca_cfg)
 }
 
 #if NRF_802154_CSMA_CA_ENABLED
+void nrf_802154_max_num_csma_ca_backoffs_set(uint8_t max_num_nb)
+{
+    nrf_802154_csma_ca_max_num_csma_ca_backoffs_set(max_num_nb);
+}
+
 #if NRF_802154_USE_RAW_API
 
 void nrf_802154_transmit_csma_ca_raw(const uint8_t * p_data)
