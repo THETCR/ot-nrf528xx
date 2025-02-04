@@ -140,6 +140,7 @@ static uint32_t sPendingEvents;
 
 #if OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2
 static uint32_t         sMacFrameCounter;
+static uint32_t         sPrevMacFrameCounter;
 static uint8_t          sKeyId;
 static otMacKeyMaterial sPrevKey;
 static otMacKeyMaterial sCurrKey;
@@ -189,6 +190,8 @@ static void dataInit(void)
     }
 
     memset(&sAckFrame, 0, sizeof(sAckFrame));
+
+    sPrevMacFrameCounter = 0;
 }
 
 static void convertShortAddress(uint8_t *aTo, uint16_t aFrom)
@@ -273,29 +276,34 @@ static void txAckProcessSecurity(uint8_t *aAckFrame)
 
     if (keyId == sKeyId)
     {
-        key = &sCurrKey;
+        key              = &sCurrKey;
+        sAckFrameCounter = sMacFrameCounter++;
     }
     else if (keyId == sKeyId - 1)
     {
-        key = &sPrevKey;
+        key              = &sPrevKey;
+        sAckFrameCounter = sPrevMacFrameCounter++;
     }
     else if (keyId == sKeyId + 1)
     {
         key = &sNextKey;
+        // Openthread does not maintain future frame counter.
+        // Mac frame counter would be overwritten after key rotation leading to
+        // frames being dropped due to counter value lower than in acks.
+        sAckFrameCounter = 0;
     }
     else
     {
         otEXPECT(false);
     }
 
-    sAckFrameCounter    = sMacFrameCounter;
     sAckKeyId           = keyId;
     sAckedWithSecEnhAck = true;
 
     ackFrame.mInfo.mTxInfo.mAesKey = key;
 
     otMacFrameSetKeyId(&ackFrame, keyId);
-    otMacFrameSetFrameCounter(&ackFrame, sMacFrameCounter++);
+    otMacFrameSetFrameCounter(&ackFrame, sAckFrameCounter);
 
     otMacFrameProcessTransmitAesCcm(&ackFrame, &sExtAddress);
 
@@ -549,6 +557,7 @@ otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aFrame)
 
         if (aFrame->mInfo.mTxInfo.mCsmaCaEnabled)
         {
+            nrf_802154_max_num_csma_ca_backoffs_set(aFrame->mInfo.mTxInfo.mMaxCsmaBackoffs);
             nrf_802154_transmit_csma_ca_raw(&aFrame->mPsdu[-1]);
         }
         else
@@ -1029,9 +1038,7 @@ void nrf_802154_received_timestamp_raw(uint8_t *p_data, int8_t power, uint8_t lq
 #if !NRF_802154_TX_STARTED_NOTIFY_ENABLED
 #error "NRF_802154_TX_STARTED_NOTIFY_ENABLED is required!"
 #endif
-    uint32_t offset =
-        (int32_t)otPlatAlarmMicroGetNow() - (int32_t)nrf_802154_first_symbol_timestamp_get(time, p_data[0]);
-    receivedFrame->mInfo.mRxInfo.mTimestamp = nrf5AlarmGetCurrentTime() - offset;
+    receivedFrame->mInfo.mRxInfo.mTimestamp = nrf_802154_timestamp_end_to_phr_convert(time, p_data[0]);
 
     sAckedWithFramePending = false;
 
@@ -1164,10 +1171,7 @@ void nrf_802154_transmitted_timestamp_raw(const uint8_t *aFrame,
     }
     else
     {
-        uint32_t offset =
-            (int32_t)otPlatAlarmMicroGetNow() - (int32_t)nrf_802154_first_symbol_timestamp_get(ack_time, aAckPsdu[0]);
-
-        sAckFrame.mInfo.mRxInfo.mTimestamp = nrf5AlarmGetCurrentTime() - offset;
+        sAckFrame.mInfo.mRxInfo.mTimestamp = nrf_802154_timestamp_end_to_phr_convert(ack_time, aAckPsdu[0]);
         sAckFrame.mPsdu                    = &aAckPsdu[1];
         sAckFrame.mLength                  = aAckPsdu[0];
         sAckFrame.mInfo.mRxInfo.mRssi      = aPower;
@@ -1308,10 +1312,11 @@ void otPlatRadioSetMacKey(otInstance             *aInstance,
 
     CRITICAL_REGION_ENTER();
 
-    sKeyId   = aKeyId;
-    sPrevKey = *aPrevKey;
-    sCurrKey = *aCurrKey;
-    sNextKey = *aNextKey;
+    sKeyId               = aKeyId;
+    sPrevKey             = *aPrevKey;
+    sCurrKey             = *aCurrKey;
+    sNextKey             = *aNextKey;
+    sPrevMacFrameCounter = sMacFrameCounter;
 
     CRITICAL_REGION_EXIT();
 }
@@ -1416,7 +1421,7 @@ uint8_t otPlatRadioGetCslAccuracy(otInstance *aInstance)
     return otPlatTimeGetXtalAccuracy() / 2;
 }
 
-uint8_t otPlatRadioGetCslClockUncertainty(otInstance *aInstance)
+uint8_t otPlatRadioGetCslUncertainty(otInstance *aInstance)
 {
     OT_UNUSED_VARIABLE(aInstance);
 

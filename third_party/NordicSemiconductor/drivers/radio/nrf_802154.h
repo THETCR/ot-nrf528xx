@@ -245,6 +245,21 @@ uint8_t nrf_802154_ccaedthres_from_dbm_calculate(int8_t dbm);
 uint32_t nrf_802154_first_symbol_timestamp_get(uint32_t end_timestamp, uint8_t psdu_length);
 
 /**
+ * @brief  Converts the timestamp of the frame's end to the timestamp of the start of its PHR.
+ *
+ * This function calculates the time when the first symbol of the PHR is at the local antenna. Note
+ * that this time is equivalent to the end of the frame's SFD and RMARKER as defined in'
+ * IEEE 802.15.4-2020, Section 6.9.1.
+ *
+ * @param[in]  end_timestamp  Timestamp of the end of the last symbol in the frame,
+ *                            in microseconds.
+ * @param[in]  psdu_length    Number of bytes in the frame PSDU.
+ *
+ * @return  Timestamp of the start of the PHR of a given frame, in microseconds.
+ */
+uint64_t nrf_802154_timestamp_end_to_phr_convert(uint64_t end_timestamp, uint8_t psdu_length);
+
+/**
  * @}
  * @defgroup nrf_802154_transitions Functions to request FSM transitions and check current state
  * @{
@@ -1174,6 +1189,16 @@ void nrf_802154_cca_cfg_get(nrf_802154_cca_cfg_t * p_cca_cfg);
  * @{
  */
 #if NRF_802154_CSMA_CA_ENABLED
+
+/**
+ * @brief Sets the maximum number of backoffs that the CSMA-CA algorithm will attempt before declaring a channel access failure.
+ *
+ * @note If the @p max_num_nb is set to 0, the backoff mechanism will be skipped and the CCA will still be performed once.
+ *
+ * @param[in]  max_num_nb  The maximum number of CSMA-CA backoffs.
+ */
+void nrf_802154_max_num_csma_ca_backoffs_set(uint8_t max_num_nb);
+
 #if NRF_802154_USE_RAW_API
 
 /**
